@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theo 2 Trainer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (für JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- MathJax (für Formeln) -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' },
+            startup: { typeset: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* Essential for 3D Transforms across browsers */
+        .perspective-1000 { 
+            perspective: 1000px;
+            -webkit-perspective: 1000px; 
+        }
+        .preserve-3d { 
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
+        .backface-hidden { 
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICON COMPONENTS (Ersatz für lucide-react Importe) ---
+        const IconBase = ({ d, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {d}
+            </svg>
+        );
+
+        const ChevronLeft = (props) => <IconBase {...props} d={<path d="m15 18-6-6 6-6"/>} />;
+        const ChevronRight = (props) => <IconBase {...props} d={<path d="m9 18 6-6-6-6"/>} />;
+        const GraduationCap = (props) => <IconBase {...props} d={[<path d="M22 10v6M2 10l10-5 10 5-10 5z"/>, <path d="M6 12v5c3 3 9 3 12 0v-5"/>]} />;
+
+        const RotateCw = (props) => <IconBase {...props} d={[<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>, <path d="M21 3v5h-5"/>]} />;
+        const BookOpen = (props) => <IconBase {...props} d={[<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>, <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>]} />;
+        const CheckCircle = (props) => <IconBase {...props} d={[<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>, <path d="m22 4-12 12-4-4"/>]} />;
+        const ArrowLeft = (props) => <IconBase {...props} d={[<path d="m12 19-7-7 7-7"/>, <path d="M19 12H5"/>]} />;
+        const CheckSquare = (props) => <IconBase {...props} d={[<path d="m9 11 3 3L22 4"/>, <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>]} />;
+        const Square = (props) => <IconBase {...props} d={<rect width="18" height="18" x="3" y="3" rx="2" />} />;
+        const Shuffle = (props) => <IconBase {...props} d={[<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1.1 2-1.7 3.3-1.7H22"/>, <path d="m16 2 6 6"/>, <path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1.1 2 1.7 3.3 1.7H22"/>, <path d="m16 22 6-6"/>]} />;
+        const Home = (props) => <IconBase {...props} d={[<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>, <polyline points="9 22 9 12 15 12 15 22"/>]} />;
+        
+
+        // --- Sheet Metadata ---
+        const sheetMetadata = [
+            { id: 1, title: "Blatt 1", topic: "Mathematische Grundlagen & Indexnotation" },
+            { id: 2, title: "Blatt 2", topic: "Gaußscher Satz & Potentialtheorie" },
+            { id: 3, title: "Blatt 3", topic: "Randwertprobleme & Green'sche Funktionen" },
+            { id: 4, title: "Blatt 4", topic: "Magnetostatik & Stationäre Ströme" },
+            { id: 5, title: "Blatt 5", topic: "Vektorpotential & Multipole" },
+            { id: 6, title: "Blatt 6", topic: "Elektrostatik in Materie (Dielektrika)" },
+            { id: 7, title: "Blatt 7", topic: "Induktion & Magnetismus in Materie" },
+            { id: 8, title: "Blatt 8", topic: "Maxwell-Gleichungen & Dynamik" },
+            { id: 9, title: "Blatt 9", topic: "Erhaltungssätze & Poynting-Vektor" },
+            { id: 10, title: "Blatt 10", topic: "Wellengleichung & Polarisation" },
+            { id: 11, title: "Blatt 11", topic: "Inhomogene Wellengleichung & Fourier" },
+            { id: 12, title: "Blatt 12", topic: "Strahlung & Spezielle Relativitätstheorie" },
+        ];
+
+        // --- Data: Quickies Zettel 1 - 12 ---
+        const flashcardsData = [
+            // --- Zettel 1 ---
+            {
+            "id": 1,
+            "question": "Wie schreibt man $\\text{grad } f(\\vec{x})$, $\\text{div } \\vec{F}(\\vec{x})$ und $\\text{rot } \\vec{F}(\\vec{x})$ in Indexnotation?",
+            "answer": "Unter Verwendung der Einsteinschen Summenkonvention (über doppelt auftretende Indizes wird summiert) lauten die Operatoren:\n\n1.  **Gradient**: $(\\nabla f)_i = \\partial_i f$ (Vektor, der in Richtung des stärksten Anstiegs zeigt).\n2.  **Divergenz**: $\\nabla \\cdot \\vec{F} = \\partial_i F_i$ (Skalar, der die Quellstärke angibt).\n3.  **Rotation**: $(\\nabla \\times \\vec{F})_i = \\epsilon_{ijk} \\partial_j F_k$ (Vektor, der die Wirbelstärke angibt, mit dem Levi-Civita-Tensor $\\epsilon_{ijk}$).",
+            "source": "Zettel 1, Aufgabe 1",
+            "scriptRef": "Anhang A.4.3 (Vektoranalysis)",
+            "sheetId": 1
+            },
+            {
+            "id": 2,
+            "question": "Was ist das Coulombsche Gesetz und wann ist es gültig?",
+            "answer": "Das Coulombsche Gesetz ist das fundamentale Kraftgesetz der Elektrostatik. Es beschreibt die Kraft, die eine ruhende Quellenladung $Q$ auf eine ruhende Testladung $q$ im Abstand $r$ ausübt:\n\n$$ \\vec{F} = \\frac{1}{4\\pi\\epsilon_0} \\frac{q Q}{r^2} \\hat{r} $$\n\n**Gültigkeit**: Es gilt streng nur in der Elektrostatik (alle Ladungen befinden sich in Ruhe) und im Vakuum. $\\epsilon_0$ ist die elektrische Feldkonstante.",
+            "source": "Zettel 1, Aufgabe 2",
+            "scriptRef": "Kapitel 2.1, Gl. (2.3)",
+            "sheetId": 1
+            },
+            {
+            "id": 3,
+            "question": "Nennen Sie Gemeinsamkeiten und Unterschiede zwischen dem Coulomb Gesetz und Newtonschen Gravitationsgesetz.",
+            "answer": "**Gemeinsamkeiten**:\n- Beides sind Zentralkräfte, die entlang der Verbindungslinie $\\hat{r}$ wirken.\n- Beide folgen einem $1/r^2$-Abstandsgesetz.\n- Beides sind konservative Kräfte, weshalb ein Potential definiert werden kann.\n\n**Unterschiede**:\n- **Vorzeichen**: Ladungen $q$ können positiv oder negativ sein (anziehend/abstoßend), Massen $m$ sind immer positiv (Gravitation ist nur anziehend).\n- **Stärke**: Die Coulomb-Kraft ist um viele Größenordnungen stärker (Verhältnis $F_C/F_G \\approx 10^{36}$ bis $10^{42}$ je nach Teilchen).",
+            "source": "Zettel 1, Aufgabe 3",
+            "scriptRef": "Kapitel 1.1, Tab. 1.1 / Gl. (1.1)",
+            "sheetId": 1
+            },
+            {
+            "id": 4,
+            "question": "Was ist die Lorentzkraft?",
+            "answer": "Die Lorentzkraft ist die Gesamtkraft auf eine Ladung $q$, die sich mit der Geschwindigkeit $\\vec{v}$ durch elektromagnetische Felder bewegt:\n\n$$ \\vec{F} = q(\\vec{E} + \\vec{v} \\times \\vec{B}) $$\n\nDer Term $\\vec{F}_{el} = q\\vec{E}$ beschleunigt die Ladung in Feldrichtung (oder entgegen), während der magnetische Term $\\vec{F}_{mag} = q(\\vec{v} \\times \\vec{B})$ immer senkrecht zur Bewegungsrichtung wirkt und die Bahn krümmt, aber keine Arbeit verrichtet.",
+            "source": "Zettel 1, Aufgabe 4",
+            "scriptRef": "Kapitel 1.3.2, Gl. (1.4)",
+            "sheetId": 1
+            },
+            {
+            "id": 5,
+            "question": "Was besagt das Superpositionsprinzip und warum ist es wichtig?",
+            "answer": "Das Superpositionsprinzip besagt, dass sich die Kräfte (oder Felder) mehrerer Ladungen ungestört überlagern. Die Gesamtkraft ist die vektorielle Summe der Einzelkräfte:\n$$ \\vec{F}_{ges} = \\sum_i \\vec{F}_i $$\n**Wichtigkeit**: Es folgt aus der Linearität der Maxwell-Gleichungen (und des Coulomb-Gesetzes) und ermöglicht es, komplexe Ladungsverteilungen durch Summation/Integration einfacher Punktladungsfelder zu berechnen.",
+            "source": "Zettel 1, Aufgabe 5",
+            "scriptRef": "Kapitel 2.1, Gl. (2.5)",
+            "sheetId": 1
+            },
+            {
+            "id": 6,
+            "question": "Was sind die Eigenschaften von elektrischen Feldlinien?",
+            "answer": "Feldlinien veranschaulichen das Vektorfeld $\\vec{E}$:\n1.  Sie beginnen bei positiven Ladungen (Quellen) und enden bei negativen (Senken).\n2.  Die Tangente an die Linie gibt die lokale Richtung von $\\vec{E}$ an.\n3.  Ihre Dichte ist proportional zur Feldstärke $|\\vec{E}|$.\n4.  Feldlinien schneiden sich niemals (da die Feldrichtung eindeutig ist).\n5.  Im elektrostatischen Gleichgewicht stehen sie senkrecht auf Leiteroberflächen.",
+            "source": "Zettel 1, Aufgabe 6",
+            "scriptRef": "Kapitel 2.2.1 (Elektrische Feldlinien)",
+            "sheetId": 1
+            },
+            // --- Zettel 2 ---
+            {
+            "id": 7,
+            "question": "Angenommen, es regnet und der Regen fällt senkrecht nach unten in einen aufrechten Eimer mit Fläche $A$. Der Fluss des Regens durch die Öffnung des Eimers sei $\\gamma$. Wie ändert sich der Fluss, wenn wir den Eimer jetzt um einen Winkel $\\theta$ neigen?",
+            "answer": "Der Fluss wird reduziert, da die effektive Fläche, die vom 'Regenfeld' getroffen wird, kleiner wird. Mathematisch ist der Fluss $\\mathcal{F}_E$ das Skalarprodukt aus Feldvektor $\\vec{E}$ und Flächennormalenvektor $\\vec{A}$:\n\n$$ \\mathcal{F}_E = \\int_S \\vec{E} \\cdot d\\vec{S} = |\\vec{E}| |\\vec{A}| \\cos(\\theta) $$\n\nBei einer Neigung um $\\theta$ verringert sich der Fluss also um den Faktor $\\cos(\\theta)$.",
+            "source": "Zettel 2, Aufgabe 1",
+            "scriptRef": "Kapitel 2.3.1, Gl. (2.18)",
+            "sheetId": 2
+            },
+            {
+            "id": 8,
+            "question": "Was besagt der Gaußsche Satz der Elektrostatik?",
+            "answer": "Er verknüpft den elektrischen Fluss durch eine geschlossene Oberfläche mit der Ladung im Inneren:\n\n**Integralform**: $$ \\oint_{S} \\vec{E} \\cdot d\\vec{S} = \\frac{Q_{in}}{\\epsilon_0} $$ (Der Fluss ist proportional zur eingeschlossenen Ladung).\n\n**Differentielle Form**: $$ \\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\epsilon_0} $$ (Ladungen sind die Quellen des E-Feldes).",
+            "source": "Zettel 2, Aufgabe 2",
+            "scriptRef": "Kapitel 2.3.2, Gl. (2.22) / (2.25)",
+            "sheetId": 2
+            },
+            {
+            "id": 9,
+            "question": "Warum verschwindet die Rotation des elektrischen Feldes in der Elektrostatik?",
+            "answer": "Das elektrostatische Feld wird von ruhenden Ladungen erzeugt und ist ein konservatives Feld (das Linienintegral ist wegunabhängig). Daraus folgt lokal:\n\n$$ \\nabla \\times \\vec{E} = 0 $$\n\nDies ist gleichbedeutend damit, dass es in der Elektrostatik keine geschlossenen Feldlinienwirbel gibt. (Hinweis: Dies gilt nicht mehr bei zeitlich veränderlichen Magnetfeldern, Induktionsgesetz).",
+            "source": "Zettel 2, Aufgabe 3",
+            "scriptRef": "Kapitel 2.3.3, Gl. (2.29)",
+            "sheetId": 2
+            },
+            {
+            "id": 10,
+            "question": "Was ist der Vorteil mit dem elektrischen Potential statt dem elektrischen Feld zu arbeiten?",
+            "answer": "Da $\\nabla \\times \\vec{E} = 0$, kann $\\vec{E}$ als Gradient eines Skalarfeldes ausgedrückt werden: $\\vec{E} = -\\nabla \\Phi$.\n\n**Vorteil**: Das Potential $\\Phi$ ist ein Skalar (nur 1 Komponente), während $\\vec{E}$ ein Vektor (3 Komponenten) ist. Die Berechnung und Superposition von Skalaren ist mathematisch oft deutlich einfacher (keine Richtungsvektoren bei der Integration).",
+            "source": "Zettel 2, Aufgabe 4",
+            "scriptRef": "Kapitel 2.4.1, Gl. (2.34)",
+            "sheetId": 2
+            },
+            {
+            "id": 11,
+            "question": "Wie verhält sich das E-Feld eines Dipols in der Fernzone?",
+            "answer": "Für Abstände $r$, die groß im Vergleich zum Abstand der Ladungen sind ($r \\gg d$), fällt das Feld eines Dipols schneller ab als das einer Punktladung (Monopol):\n\n$$ |\\vec{E}_{Dipol}| \\propto \\frac{1}{r^3} $$\n\nIm Vergleich dazu fällt das Potential mit $1/r^2$ und das Feld einer Punktladung mit $1/r^2$.",
+            "source": "Zettel 2, Aufgabe 5",
+            "scriptRef": "Kapitel 2.4.2, Gl. (2.41)",
+            "sheetId": 2
+            },
+            {
+            "id": 12,
+            "question": "Was ist der Unterschied zwischen Laplace- und Poisson-Gleichung?",
+            "answer": "Beide sind partielle Differentialgleichungen für das Potential $\\Phi$, abgeleitet aus dem Gauß-Gesetz ($\\nabla \\cdot \\vec{E} = \\rho/\\epsilon_0$) und $\\vec{E} = -\\nabla \\Phi$:\n\n1.  **Poisson-Gleichung**: $$ \\nabla^2 \\Phi = -\\frac{\\rho}{\\epsilon_0} $$ (Gilt in Gebieten **mit** Ladungsverteilung $\\rho \\neq 0$).\n2.  **Laplace-Gleichung**: $$ \\nabla^2 \\Phi = 0 $$ (Gilt in **ladungsfreien** Gebieten $\\rho = 0$).",
+            "source": "Zettel 2, Aufgabe 6",
+            "scriptRef": "Kapitel 2.4.3, Gl. (2.43) / 2.4.4",
+            "sheetId": 2
+            },
+            // --- Zettel 3 ---
+            {
+            "id": 13,
+            "question": "Was ist das Randwertproblem in der Elektrostatik?",
+            "answer": "Es bezeichnet die Aufgabe, die Poisson-Gleichung $\\nabla^2 \\Phi = -\\rho/\\epsilon_0$ (oder Laplace-Gleichung) in einem Gebiet $V$ zu lösen, wobei das Verhalten von $\\Phi$ auf dem Rand $\\partial V$ festgelegt ist. Man unterscheidet:\n- **Dirichlet-RB**: Potential $\\Phi$ ist auf dem Rand vorgegeben.\n- **Neumann-RB**: Die Normalableitung $\\frac{\\partial \\Phi}{\\partial n}$ ist auf dem Rand vorgegeben.",
+            "source": "Zettel 3, Aufgabe 1",
+            "scriptRef": "Kapitel 2.5",
+            "sheetId": 3
+            },
+            {
+            "id": 14,
+            "question": "Was ist das erste Eindeutigkeitstheorem?",
+            "answer": "Das Theorem besagt, dass die Lösung $\\Phi(\\vec{r})$ der Poisson-Gleichung in einem Volumen $V$ **eindeutig** bestimmt ist, wenn das Potential auf dem gesamten Rand $\\partial V$ (Dirichlet-Randbedingung) fest vorgegeben ist. Es gibt also keine zwei verschiedenen Potentiale, die sowohl die Gleichung als auch die Randwerte erfüllen.",
+            "source": "Zettel 3, Aufgabe 2",
+            "scriptRef": "Kapitel 2.5 (Erstes Eindeutigkeitstheorem)",
+            "sheetId": 3
+            },
+            {
+            "id": 15,
+            "question": "Was ist die Idee hinter der Methode der Bildladungen?",
+            "answer": "Die Methode ist ein Trick, um Randwertprobleme mit leitenden Oberflächen (z.B. geerdete Ebene oder Kugel) zu lösen, ohne die Poisson-Gleichung direkt integrieren zu müssen. Man ersetzt die leitenden Ränder durch fiktive 'Spiegelladungen' außerhalb des Lösungsgebiets, die so platziert sind, dass sie zusammen mit den echten Ladungen das geforderte konstante Potential auf dem Rand erzeugen.",
+            "source": "Zettel 3, Aufgabe 3",
+            "scriptRef": "Kapitel 2.5.1",
+            "sheetId": 3
+            },
+            {
+            "id": 16,
+            "question": "Woher kommen die Greenschen Identitäten?",
+            "answer": "Sie sind mathematische Sätze der Vektoranalysis, die aus dem Gaußschen Satz (Divergenztheorem) folgen. Man wendet den Gaußschen Satz auf Vektorfelder der Form $\\vec{F} = \\psi \\nabla \\phi$ (erste Identität) bzw. auf die Differenz zweier solcher Terme (zweite Identität) an. Sie sind essentiell für die theoretische Behandlung von Randwertproblemen.",
+            "source": "Zettel 3, Aufgabe 4",
+            "scriptRef": "Kapitel 2.5.3 (Mathe Intermezzo)",
+            "sheetId": 3
+            },
+            {
+            "id": 17,
+            "question": "Was sind Greenschen Funktionen?",
+            "answer": "Die Greensche Funktion $G(\\vec{r}, \\vec{r}')$ entspricht physikalisch dem Potential einer Punktladung am Ort $\\vec{r}'$ innerhalb des Gebiets, wobei $G$ homogene Randbedingungen erfüllt. Mathematisch ist sie der Kern der Integralgleichung zur Lösung der Poisson-Gleichung:\n$$ \\Phi(\\vec{r}) = \\int_V \\rho(\\vec{r}') G(\\vec{r}, \\vec{r}') dV' + \\text{Randterme} $$",
+            "source": "Zettel 3, Aufgabe 5",
+            "scriptRef": "Kapitel 2.5.3, Gl. (2.73)/(2.75)",
+            "sheetId": 3
+            },
+            {
+            "id": 18,
+            "question": "Was ist die Energie des elektrischen Feldes?",
+            "answer": "Die Energie, die aufgewendet werden muss, um eine Ladungsverteilung aufzubauen, ist im elektrischen Feld gespeichert. Die Energiedichte ist $u = \\frac{\\epsilon_0}{2}\\vec{E}^2$. Die Gesamtenergie ist das Volumenintegral:\n\n$$ W_E = \\frac{\\epsilon_0}{2} \\int_V \\vec{E}^2 dV $$",
+            "source": "Zettel 3, Aufgabe 6",
+            "scriptRef": "Kapitel 2.6, Gl. (2.100)",
+            "sheetId": 3
+            },
+            {
+            "id": 19,
+            "question": "Wie hängen elektrische Ladungsdichte, elektrisches Potential und elektrische Feldstärke zusammen?",
+            "answer": "Diese Größen bilden ein Dreieck von Beziehungen (vgl. Abb. 2.16):\n1.  **Feld aus Potential**: $\\vec{E} = -\\nabla \\Phi$ (Gradient)\n2.  **Ladung aus Feld**: $\\nabla \\cdot \\vec{E} = \\rho/\\epsilon_0$ (Divergenz/Gauß)\n3.  **Ladung aus Potential**: $\\nabla^2 \\Phi = -\\rho/\\epsilon_0$ (Poisson-Gleichung)",
+            "source": "Zettel 3, Aufgabe 7",
+            "scriptRef": "Kapitel 2.7, Abb. 2.16",
+            "sheetId": 3
+            },
+            // --- Zettel 4 ---
+            {
+            "id": 20,
+            "question": "Was ist die Lorentzkraft?",
+            "answer": "$$ \\vec{F} = q(\\vec{E} + \\vec{v} \\times \\vec{B}) $$\nWichtig ist hier energetisch: Die magnetische Komponente $\\vec{F}_{mag} = q(\\vec{v} \\times \\vec{B})$ steht immer senkrecht zur Geschwindigkeit $\\vec{v}$. Deshalb verrichtet das statische Magnetfeld **keine Arbeit** an der Ladung; es ändert nur die Bewegungsrichtung, nicht den Betrag der Geschwindigkeit.",
+            "source": "Zettel 4, Aufgabe 1",
+            "scriptRef": "Kapitel 3.1.1, Gl. (3.1)",
+            "sheetId": 4
+            },
+            {
+            "id": 21,
+            "question": "Woher kommt die Kontinuitätsgleichung?",
+            "answer": "Sie folgt direkt aus der physikalischen Erhaltung der Ladung: Die Änderung der Ladungsdichte in einem Volumen muss durch einen abfließenden Strom ausgeglichen werden.\n\n$$ \\nabla \\cdot \\vec{J} = -\\frac{\\partial \\rho}{\\partial t} $$",
+            "source": "Zettel 4, Aufgabe 2",
+            "scriptRef": "Kapitel 3.1.3, Gl. (3.13)",
+            "sheetId": 4
+            },
+            {
+            "id": 22,
+            "question": "Was ist “statisch” in der Magnetostatik?",
+            "answer": "Magnetostatik betrachtet zeitlich konstante Ströme und Ladungsverteilungen. Das bedeutet $\\frac{\\partial \\rho}{\\partial t} = 0$, woraus über die Kontinuitätsgleichung folgt, dass die Stromdichte divergenzfrei ist:\n$$ \\nabla \\cdot \\vec{J} = 0 $$\nDie resultierenden Magnetfelder $\\vec{B}$ sind zeitlich konstant.",
+            "source": "Zettel 4, Aufgabe 3",
+            "scriptRef": "Kapitel 3.2",
+            "sheetId": 4
+            },
+            {
+            "id": 23,
+            "question": "Was ist das Biot-Savart Gesetz?",
+            "answer": "Es ist das Analogon zum Coulomb-Gesetz für Ströme. Es berechnet das Magnetfeld $\\vec{B}(\\vec{r})$ am Ort $\\vec{r}$, das von einer stationären Stromdichte $\\vec{J}(\\vec{r}')$ erzeugt wird:\n\n$$ \\vec{B}(\\vec{r}) = \\frac{\\mu_0}{4\\pi} \\int \\frac{\\vec{J}(\\vec{r}') \\times \\hat{R}'}{R'^2} dV' $$\n\n(wobei $\\vec{R}' = \\vec{r} - \\vec{r}'$ der Abstandsvektor ist).",
+            "source": "Zettel 4, Aufgabe 4",
+            "scriptRef": "Kapitel 3.2, Gl. (3.19)",
+            "sheetId": 4
+            },
+            {
+            "id": 24,
+            "question": "Was ist die mathematisch Beschreibung für die Nicht-Existenz von magnetischen Monopolen?",
+            "answer": "Das Magnetfeld ist quellenfrei. Feldlinien haben keinen Anfang und kein Ende (sie sind geschlossen). Mathematisch ausgedrückt durch die Divergenzfreiheit:\n\n$$ \\nabla \\cdot \\vec{B} = 0 $$\n\nDies ist die zweite Maxwell-Gleichung.",
+            "source": "Zettel 4, Aufgabe 5",
+            "scriptRef": "Kapitel 3.3.1, Gl. (3.22)",
+            "sheetId": 4
+            },
+            {
+            "id": 25,
+            "question": "Was ist das Ampèresche Gesetz?",
+            "answer": "Es beschreibt den Zusammenhang zwischen dem Wirbel des Magnetfeldes und der stromdurchflossenen Fläche (in der Magnetostatik).\n**Differentialform**: $$ \\nabla \\times \\vec{B} = \\mu_0 \\vec{J} $$\n**Integralform**: $$ \\oint \\vec{B} \\cdot d\\vec{l} = \\mu_0 I_{ein} $$\n(Das Linienintegral von B ist proportional zum umschlossenen Strom).",
+            "source": "Zettel 4, Aufgabe 6",
+            "scriptRef": "Kapitel 3.3.2, Gl. (3.28)",
+            "sheetId": 4
+            },
+            // --- Zettel 5 ---
+            {
+            "id": 26,
+            "question": "Skizzieren sie die Magnetfeldlinien eines perfekten magnetischen Dipol. Wie skaliert die Magnetfeldstärke eines Dipols mit der Entfernung?",
+            "answer": "Die Feldlinien verlaufen in geschlossenen Schleifen, die am Nordpol austreten und am Südpol eintreten (im Inneren laufen sie von Süd nach Nord). In der Fernzone fällt die Magnetfeldstärke mit der dritten Potenz des Abstands ab:\n\n$$ |\\vec{B}_{Dipol}| \\propto \\frac{1}{r^3} $$",
+            "source": "Zettel 5, Aufgabe 1",
+            "scriptRef": "Kapitel 3.4.2, Abb. 3.6 / Gl. (3.49)",
+            "sheetId": 5
+            },
+            {
+            "id": 27,
+            "question": "Was ist das Vektorpotential?",
+            "answer": "Aufgrund der Quellenfreiheit des B-Feldes ($\\nabla \\cdot \\vec{B} = 0$) kann $\\vec{B}$ als Rotation eines Vektorfeldes $\\vec{A}$ dargestellt werden:\n\n$$ \\vec{B} = \\nabla \\times \\vec{A} $$\n\n$\\vec{A}$ heißt Vektorpotential. Es ist mathematisch oft einfacher zu handhaben als $\\vec{B}$.",
+            "source": "Zettel 5, Aufgabe 2",
+            "scriptRef": "Kapitel 3.4.1, Gl. (3.31)",
+            "sheetId": 5
+            },
+            {
+            "id": 28,
+            "question": "Was versteht man unter Eichtransformation in der Magnetostatik?",
+            "answer": "Das Vektorpotential $\\vec{A}$ ist nicht eindeutig. Die Transformation $\\vec{A}' = \\vec{A} + \\nabla \\Psi$ (Addition eines Gradientenfeldes) ändert das physikalische Feld $\\vec{B}$ nicht, da $\\nabla \\times (\\nabla \\Psi) = 0$. Diese Freiheit nutzt man zur Vereinfachung der Gleichungen, z.B. durch die **Coulomb-Eichung**: $\\nabla \\cdot \\vec{A} = 0$.",
+            "source": "Zettel 5, Aufgabe 3",
+            "scriptRef": "Kapitel 3.4.1, Gl. (3.34)",
+            "sheetId": 5
+            },
+            {
+            "id": 29,
+            "question": "Was ist die Verbindungen zwischen elektrischer Stromdichte, Magnetfeld, und Vektorpotential?",
+            "answer": "Die Größen hängen (unter Coulomb-Eichung) wie folgt zusammen:\n1.  **Definition**: $\\vec{B} = \\nabla \\times \\vec{A}$\n2.  **Ampère-Gesetz für A**: $\\nabla^2 \\vec{A} = -\\mu_0 \\vec{J}$\nDies ist formal identisch zur Poisson-Gleichung der Elektrostatik ($\\nabla^2 \\Phi \\propto -\\rho$), weshalb $\\vec{A}$ aus $\\vec{J}$ analog zum Coulomb-Potential berechnet werden kann.",
+            "source": "Zettel 5, Aufgabe 4",
+            "scriptRef": "Kapitel 3.4.1, Gl. (3.36)",
+            "sheetId": 5
+            },
+            {
+            "id": 30,
+            "question": "Welche Eigenschaften hat das elektrische Feld im Inneren von Leitern?",
+            "answer": "Im elektrostatischen Gleichgewicht ist das makroskopische elektrische Feld im Inneren eines idealen Leiters Null: $\\vec{E} = 0$. Wäre es nicht Null, würden sich die freien Ladungsträger bewegen, bis das Feld kompensiert ist. Folglich sitzt jegliche Netto-Ladung nur auf der Oberfläche.",
+            "source": "Zettel 5, Aufgabe 5",
+            "scriptRef": "Kapitel 4.2.1, Gl. (4.7)",
+            "sheetId": 5
+            },
+            // --- Zettel 6 ---
+            {
+            "id": 31,
+            "question": "Was sind die Randwerte des elektrischen Feldes an einer Leiteroberfläche?",
+            "answer": "Aufgrund von $\\vec{E}_{innen}=0$ gilt direkt an der Oberfläche:\n1.  **Tangential**: $E_t = 0$ (Feld steht senkrecht).\n2.  **Normal**: $E_{\\perp,o} = \\frac{\\sigma}{\\epsilon_0}$ (Der Sprung der Normalkomponente entspricht der Oberflächenladungsdichte $\\sigma$).",
+            "source": "Zettel 6, Aufgabe 1",
+            "scriptRef": "Kapitel 4.2.1, Gl. (4.10)",
+            "sheetId": 6
+            },
+            {
+            "id": 32,
+            "question": "Was ist ein Dielektrikum?",
+            "answer": "Ein Dielektrikum ist ein elektrischer Isolator. Es enthält keine freien Ladungen, kann aber im elektrischen Feld polarisiert werden. Dabei richten sich mikroskopische Dipole aus oder werden induziert, was das makroskopische Feld im Inneren des Materials abschwächt.",
+            "source": "Zettel 6, Aufgabe 2",
+            "scriptRef": "Kapitel 4.2.2",
+            "sheetId": 6
+            },
+            {
+            "id": 33,
+            "question": "Was ist Polarisation?",
+            "answer": "Die Polarisation $\\vec{P}$ ist definiert als das elektrische Dipolmoment pro Volumeneinheit. Sie beschreibt den Zustand des Dielektrikums quantitativ. Eine inhomogene Polarisation führt zu einer effektiven gebundenen Raumladungsdichte:\n$$ \\rho_{pol} = -\\nabla \\cdot \\vec{P} $$",
+            "source": "Zettel 6, Aufgabe 3",
+            "scriptRef": "Kapitel 4.2.2, Gl. (4.15)",
+            "sheetId": 6
+            },
+            {
+            "id": 34,
+            "question": "Wie ändert sich das Gaußsche Gesetz in einem Dielektrikum?",
+            "answer": "Man führt die dielektrische Verschiebung $\\vec{D} = \\epsilon_0 \\vec{E} + \\vec{P}$ ein. Das Gaußsche Gesetz bezieht sich dann nur noch auf die **freien** Ladungen $\\rho_{frei}$:\n\n$$ \\nabla \\cdot \\vec{D} = \\rho_{frei} $$\n\n(Die gebundenen Polarisationsladungen sind in $\\vec{D}$ bereits berücksichtigt).",
+            "source": "Zettel 6, Aufgabe 4",
+            "scriptRef": "Kapitel 4.2.2, Gl. (4.18)",
+            "sheetId": 6
+            },
+            // --- Zettel 7 ---
+            {
+            "id": 35,
+            "question": "Was ist der Unterschied zwischen magnetischer Feldstärke und magnetischer Flussdichte?",
+            "answer": "**Flussdichte $\\vec{B}$**: Das fundamentale, physikalische Magnetfeld (bestimmt die Lorentzkraft).\n**Feldstärke $\\vec{H}$**: Ein Hilfsfeld in der Materie, um den Einfluss der Magnetisierung $\\vec{M}$ abzutrennen. Es gilt:\n$$ \\vec{H} = \\frac{1}{\\mu_0}\\vec{B} - \\vec{M} $$",
+            "source": "Zettel 7, Aufgabe 1",
+            "scriptRef": "Kapitel 4.3.1, Gl. (4.47) [bzw. 5.27]",
+            "sheetId": 7
+            },
+            {
+            "id": 36,
+            "question": "Was ist magnetische Suszeptibilität $\\chi_B$? Warum kann $\\chi_B$ sowohl positiv als auch negativ sein, wohingegen die elektrische Suszeptibilität $\\chi_E$ immer positiv ist?",
+            "answer": "Sie beschreibt die lineare Antwort des Materials: $\\vec{M} = \\chi_B \\vec{H}$.\n- **Paramagnetismus ($\\chi_B > 0$)**: Dipole richten sich parallel zum Feld aus (Verstärkung).\n- **Diamagnetismus ($\\chi_B < 0$)**: Induzierte Momente richten sich gemäß Lenzscher Regel entgegen dem Feld aus (Abschwächung). In der Elektrostatik gibt es kein Analogon zur Lenzschen Regel, die Dipole richten sich dort immer parallel zum Feld aus ($\\chi_E > 0$).",
+            "source": "Zettel 7, Aufgabe 2",
+            "scriptRef": "Kapitel 4.3.2, Gl. (4.49)",
+            "sheetId": 7
+            },
+            {
+            "id": 37,
+            "question": "Was ist die elektromotorische Kraft? Warum ist dieser Begriff irreführend?",
+            "answer": "Die EMF (electromotive force) $\\mathcal{E}$ ist das Wegintegral über das elektrische Feld (bzw. die Kraft pro Ladung) entlang einer geschlossenen Schleife:\n$$ \\mathcal{E} = \\oint \\vec{E}' \\cdot d\\vec{l} = -\\frac{d\\mathcal{F}_B}{dt} $$\n**Irreführend**: Sie ist physikalisch keine Kraft (Einheit Newton), sondern eine Spannung (Energie pro Ladung, Einheit Volt).",
+            "source": "Zettel 7, Aufgabe 3",
+            "scriptRef": "Kapitel 5.1, Gl. (5.2)/(5.3)",
+            "sheetId": 7
+            },
+            {
+            "id": 38,
+            "question": "Was ist die Lenzsche Regel?",
+            "answer": "Der durch Induktion erzeugte Strom fließt immer so, dass sein eigenes Magnetfeld der Ursache seiner Entstehung (der Änderung des magnetischen Flusses) entgegenwirkt. Sie liefert das Minuszeichen im Induktionsgesetz.",
+            "source": "Zettel 7, Aufgabe 4",
+            "scriptRef": "Kapitel 5.1 (Text nach Gl. 5.3)",
+            "sheetId": 7
+            },
+            {
+            "id": 39,
+            "question": "Was besagt das Faradaysche Gesetz?",
+            "answer": "Ein zeitlich veränderliches Magnetfeld erzeugt ein elektrisches Wirbelfeld. Dies ist das Induktionsgesetz in Differentialform:\n\n$$ \\nabla \\times \\vec{E} = -\\frac{\\partial \\vec{B}}{\\partial t} $$",
+            "source": "Zettel 7, Aufgabe 5",
+            "scriptRef": "Kapitel 5.1, Gl. (5.12)",
+            "sheetId": 7
+            },
+            {
+            "id": 40,
+            "question": "Warum hat Maxwell den Verschiebungsstrom eingeführt?",
+            "answer": "Das ursprüngliche Ampère-Gesetz ($\\nabla \\times \\vec{B} = \\mu_0 \\vec{J}$) verletzt bei zeitabhängigen Feldern die Ladungserhaltung (Kontinuitätsgleichung). Maxwell fügte den Verschiebungsstromterm $\\mu_0 \\epsilon_0 \\frac{\\partial \\vec{E}}{\\partial t}$ hinzu, um die Gleichung mathematisch konsistent zur Ladungserhaltung zu machen.",
+            "source": "Zettel 7, Aufgabe 6",
+            "scriptRef": "Kapitel 5.2, Gl. (5.14)",
+            "sheetId": 7
+            },
+            // --- Zettel 8 ---
+            {
+            "id": 41,
+            "question": "Wie lautet die Kontinuitätsgleichung und was sagt sie aus?",
+            "answer": "$$ \\nabla \\cdot \\vec{J} = -\\frac{\\partial \\rho}{\\partial t} $$\nSie ist der mathematische Ausdruck der **lokalen Ladungserhaltung**: Eine Änderung der Ladungsdichte an einem Ort kann nur durch einen Zu- oder Abfluss von Ladung (Strom) erfolgen. Ladung kann nicht lokal entstehen oder verschwinden.",
+            "source": "Zettel 8, Aufgabe 1",
+            "scriptRef": "Kapitel 3.1.3, Gl. (3.13) / 5.5.1",
+            "sheetId": 8
+            },
+            {
+            "id": 42,
+            "question": "Wie lautet die Stromdichte von N Punktladungen, die sich auf den Trajektorien $\\vec{r}_i(t)$ ($i = 1, ..., N$) bewegen?",
+            "answer": "Die Stromdichte ist die Summe der Produkte aus Ladung, Geschwindigkeit und einer Delta-Distribution am Ort des Teilchens:\n\n$$ \\vec{J}(\\vec{r}, t) = \\sum_{n} q_n \\vec{v}_n(t) \\delta(\\vec{r} - \\vec{r}_n(t)) $$",
+            "source": "Zettel 8, Aufgabe 2",
+            "scriptRef": "Kapitel 5.5.2 (Text vor Gl. 5.59)",
+            "sheetId": 8
+            },
+            {
+            "id": 43,
+            "question": "Wie lauten die Maxwell-Gleichungen im Vakuum?",
+            "answer": "1.  $\\nabla \\cdot \\vec{E} = \\rho/\\epsilon_0$ (Gauß-Gesetz)\n2.  $\\nabla \\cdot \\vec{B} = 0$ (Quellenfreiheit des B-Feldes)\n3.  $\\nabla \\times \\vec{E} = -\\partial_t \\vec{B}$ (Induktionsgesetz)\n4.  $\\nabla \\times \\vec{B} = \\mu_0 \\vec{J} + \\mu_0\\epsilon_0 \\partial_t \\vec{E}$ (Ampère-Maxwell-Gesetz)",
+            "source": "Zettel 8, Aufgabe 3",
+            "scriptRef": "Kapitel 5.3.1, Gl. (5.18)-(5.21)",
+            "sheetId": 8
+            },
+            {
+            "id": 44,
+            "question": "Wie unterscheiden sich die Maxwell-Gleichungen im Vakuum und in Materie?",
+            "answer": "In Materie verwendet man die Hilfsfelder $\\vec{D}$ und $\\vec{H}$, um Polarisations- und Magnetisierungseffekte zu absorbieren. Die Quellen sind dann nur noch die **freien** Ladungen $\\rho_{frei}$ und Ströme $\\vec{J}_{frei}$:\n$\\nabla \\cdot \\vec{D} = \\rho_{frei}$\n$\\nabla \\times \\vec{H} = \\vec{J}_{frei} + \\partial_t \\vec{D}$",
+            "source": "Zettel 8, Aufgabe 4",
+            "scriptRef": "Kapitel 5.3.2, Gl. (5.22)-(5.25)",
+            "sheetId": 8
+            },
+            {
+            "id": 45,
+            "question": "Wie ergibt sich das zeitabhängige Magnetfeld $\\vec{B}$ aus dem Vektorpotential $\\vec{A}$? Ist $\\vec{A}$ eindeutig?",
+            "answer": "Wie in der Statik gilt:\n$$ \\vec{B} = \\nabla \\times \\vec{A} $$\n$\\vec{A}$ ist **nicht eindeutig** aufgrund der Eichfreiheit. Eine Transformation $\\vec{A}' = \\vec{A} + \\nabla \\Psi$ ändert das B-Feld nicht.",
+            "source": "Zettel 8, Aufgabe 5",
+            "scriptRef": "Kapitel 5.4.1, Gl. (5.35)",
+            "sheetId": 8
+            },
+            {
+            "id": 46,
+            "question": "Wie ergibt sich das zeitabhängige elektrische Feld $\\vec{E}$ aus dem elektrischen Skalarpotential $\\Phi$? Ist $\\Phi$ eindeutig?",
+            "answer": "Im dynamischen Fall kommt der Induktionsterm dazu:\n$$ \\vec{E} = -\\nabla \\Phi - \\frac{\\partial \\vec{A}}{\\partial t} $$\nAuch $\\Phi$ ist **nicht eindeutig**. Bei einer Eichtransformation muss $\\Phi$ angepasst werden ($\\Phi' = \\Phi - \\partial_t \\Psi$), damit $\\vec{E}$ unverändert bleibt.",
+            "source": "Zettel 8, Aufgabe 6",
+            "scriptRef": "Kapitel 5.4.1, Gl. (5.36)",
+            "sheetId": 8
+            },
+            {
+            "id": 47,
+            "question": "Unter welchen Umständen kann das Magnetfeld durch ein magnetisches Skalarpotential $\\Phi_m$ beschrieben werden?",
+            "answer": "Dies ist nur möglich in Gebieten, in denen keine Ströme fließen ($\\vec{J}=0$) und keine zeitlich veränderlichen elektrischen Felder vorliegen (Magnetostatik). Dann gilt $\\nabla \\times \\vec{H} = 0$, und man kann $\\vec{H} = -\\nabla \\Phi_m$ definieren.",
+            "source": "Zettel 8, Aufgabe 7",
+            "scriptRef": "Kapitel 4.3.3, Gl. (4.55)",
+            "sheetId": 8
+            },
+            // --- Zettel 9 ---
+            {
+            "id": 48,
+            "question": "Wie können die elektrischen und magnetischen Felder durch die elektrodynamischen Potentiale $\\Phi$ und $\\vec{A}$ geschrieben werden? Überprüfen Sie die Erfüllung der homogenen Maxwell-Gleichungen.",
+            "answer": "Definitionen: $\\vec{B} = \\nabla \\times \\vec{A}$ und $\\vec{E} = -\\nabla \\Phi - \\partial_t \\vec{A}$.\n\n**Überprüfung** (sie erfüllen die homogenen Gleichungen automatisch):\n1.  $\\nabla \\cdot \\vec{B} = \\nabla \\cdot (\\nabla \\times \\vec{A}) = 0$ (Divergenz einer Rotation ist immer 0).\n2.  $\\nabla \\times \\vec{E} + \\partial_t \\vec{B} = \\nabla \\times (-\\nabla \\Phi - \\partial_t \\vec{A}) + \\partial_t (\\nabla \\times \\vec{A}) = 0 - \\partial_t(\\nabla \\times \\vec{A}) + \\partial_t(\\nabla \\times \\vec{A}) = 0$ (Rotation eines Gradienten ist 0).",
+            "source": "Zettel 9, Aufgabe 1",
+            "scriptRef": "Kapitel 5.4.1, Gl. (5.35)/(5.36)",
+            "sheetId": 9
+            },
+            {
+            "id": 49,
+            "question": "Was ist die Energie im elektrischen Feld?",
+            "answer": "Die Gesamtenergie, die im elektrischen Feld in einem Volumen $V$ gespeichert ist:\n\n$$ W_E = \\frac{\\epsilon_0}{2} \\int_V \\vec{E}^2 dV $$",
+            "source": "Zettel 9, Aufgabe 2",
+            "scriptRef": "Kapitel 5.5.2, Gl. (5.57)",
+            "sheetId": 9
+            },
+            {
+            "id": 50,
+            "question": "Was ist die Energie im magnetischen Feld?",
+            "answer": "Die Gesamtenergie, die im magnetischen Feld in einem Volumen $V$ gespeichert ist:\n\n$$ W_B = \\frac{1}{2\\mu_0} \\int_V \\vec{B}^2 dV $$\n\n(Die Summe aus $W_E$ und $W_B$ ist die gesamte Feldenergie).",
+            "source": "Zettel 9, Aufgabe 3",
+            "scriptRef": "Kapitel 5.5.2, Gl. (5.63) [implizit in Gl. 6.30]",
+            "sheetId": 9
+            },
+            {
+            "id": 51,
+            "question": "Wie ist der Poynting-Vektor definiert und welche Bedeutung hat er?",
+            "answer": "Definition (im Vakuum): $$\\vec{S} = \\frac{1}{\\mu_0} (\\vec{E} \\times \\vec{B}) $$\n**Bedeutung**: Er beschreibt die **Energiestromdichte** des elektromagnetischen Feldes. Sein Betrag gibt die Leistung pro Fläche an, seine Richtung die Richtung des Energieflusses.",
+            "source": "Zettel 9, Aufgabe 4",
+            "scriptRef": "Kapitel 5.5.2, Gl. (5.71) [Dort P genannt]",
+            "sheetId": 9
+            },
+            {
+            "id": 52,
+            "question": "Was besagt das Poynting-Theorem?",
+            "answer": "Es ist der Satz der lokalen Energieerhaltung in der Elektrodynamik:\n$$ \\frac{\\partial u}{\\partial t} + \\nabla \\cdot \\vec{S} = -\\vec{J} \\cdot \\vec{E} $$\n(Die zeitliche Änderung der elektromagnetischen Energiedichte $u$ plus die abfließende Energie $\\nabla \\cdot \\vec{S}$ entspricht der Arbeit, die das Feld an den Ladungen verrichtet $\\vec{J} \\cdot \\vec{E}$).",
+            "source": "Zettel 9, Aufgabe 5",
+            "scriptRef": "Kapitel 5.5.2, Gl. (5.72)",
+            "sheetId": 9
+            },
+            {
+            "id": 53,
+            "question": "Wozu wird der Maxwellsche Spannungstensor eingeführt?",
+            "answer": "Er wird eingeführt, um die Impulserhaltung des elektromagnetischen Feldes zu formulieren. Der Tensor $T_{ij}$ beschreibt den Fluss der $i$-ten Impulskomponente durch eine Fläche mit Normale $j$. Damit kann die Kraft auf Ladungen allein durch Feldgrößen an der Oberfläche eines Volumens ausgedrückt werden.",
+            "source": "Zettel 9, Aufgabe 6",
+            "scriptRef": "Kapitel 5.5.3, Gl. (5.75)",
+            "sheetId": 9
+            },
+            // --- Zettel 10 ---
+            {
+            "id": 54,
+            "question": "Schreiben Sie die elektrische und magnetische Energie sowohl als Funktion der Felder, als auch als Funktion von Potentialen und Quellen.",
+            "answer": "1.  **Feld-Darstellung**:\n    $W_E = \\frac{\\epsilon_0}{2} \\int E^2 dV$\n    $W_B = \\frac{1}{2\\mu_0} \\int B^2 dV$\n2.  **Quellen/Potential-Darstellung**:\n    $W_E = \\frac{1}{2} \\int \\rho \\Phi dV$\n    $W_B = \\frac{1}{2} \\int \\vec{J} \\cdot \\vec{A} dV$",
+            "source": "Zettel 10, Aufgabe 1",
+            "scriptRef": "Kapitel 5.5.2 / 2.6, Gl. (2.98) & (5.64 analog)",
+            "sheetId": 10
+            },
+            {
+            "id": 55,
+            "question": "Wie sieht die 1D Wellengleichung aus?",
+            "answer": "$$ \\frac{\\partial^2 \\psi}{\\partial x^2} - \\frac{1}{v^2} \\frac{\\partial^2 \\psi}{\\partial t^2} = 0 $$\nDie allgemeine Lösung (d'Alembert) ist eine Überlagerung aus rechts- und linkslaufenden Wellen: $\\psi(x,t) = f(x - vt) + g(x + vt)$.",
+            "source": "Zettel 10, Aufgabe 2",
+            "scriptRef": "Kapitel 6.1.1",
+            "sheetId": 10
+            },
+            {
+            "id": 56,
+            "question": "Was versteht man unter der Polarisation einer elektromagnetischen Welle? Welche Arten von Polarisationen gibt es? Wie hängen diese miteinander zusammen?",
+            "answer": "Die Polarisation beschreibt die Schwingungsrichtung des $\\vec{E}$-Vektors.\n- **Linear**: Feste Schwingungsrichtung (Phasendifferenz 0).\n- **Zirkular**: Der Vektor rotiert mit konstanter Amplitude (Phasendifferenz $\\pm \\pi/2$, gleiche Amplituden).\n- **Elliptisch**: Der allgemeinste Fall (beliebige Phase/Amplitude).\nDie Arten unterscheiden sich durch die Amplitudenverhältnisse und Phasendifferenzen der Komponenten $E_x$ und $E_y$.",
+            "source": "Zettel 10, Aufgabe 3",
+            "scriptRef": "Kapitel 6.1.3",
+            "sheetId": 10
+            },
+            {
+            "id": 57,
+            "question": "Wie hängen $\\mu_0$ und $\\epsilon_0$ mit $c$ zusammen und warum ist das spannend?",
+            "answer": "$$ c = \\frac{1}{\\sqrt{\\epsilon_0 \\mu_0}} $$\n**Bedeutung**: Diese Beziehung, die Maxwell fand, verknüpft rein elektrische ($\\epsilon_0$) und magnetische ($\\mu_0$) Konstanten mit der Lichtgeschwindigkeit. Sie war der entscheidende Hinweis darauf, dass Licht eine elektromagnetische Welle ist.",
+            "source": "Zettel 10, Aufgabe 4",
+            "scriptRef": "Kapitel 6.1.1, Gl. (6.7) / (5.38)",
+            "sheetId": 10
+            },
+            {
+            "id": 58,
+            "question": "Woher kommt die Gleichung für elektromagnetische Wellen im Vakuum und welche Rolle spielt der Maxwellsche Verschiebungsstrom hier?",
+            "answer": "Man nimmt die Rotation der Induktionsgleichung ($\\nabla \\times (\\nabla \\times \\vec{E})$) und setzt das Ampère-Maxwell-Gesetz ein. Ohne den **Verschiebungsstrom** in letzterem würde die zweite Zeitableitung fehlen, und man erhielte keine Wellengleichung, sondern eine Diffusionsgleichung.",
+            "source": "Zettel 10, Aufgabe 5",
+            "scriptRef": "Kapitel 6.1.1, Gl. (6.5)",
+            "sheetId": 10
+            },
+            // --- Zettel 11 ---
+            {
+            "id": 59,
+            "question": "Wie sehen die Wellengleichungen für elektromagnetische Wellen in einem Raum mit Quellen im Vergleich zu einem quellenfreien Raum aus?",
+            "answer": "In der Lorenz-Eichung sind es inhomogene Wellengleichungen:\n$$ \\Box \\Phi = (\\nabla^2 - \\frac{1}{c^2} \\partial_t^2) \\Phi = -\\frac{\\rho}{\\epsilon_0} $$\n$$ \\Box \\vec{A} = (\\nabla^2 - \\frac{1}{c^2} \\partial_t^2) \\vec{A} = -\\mu_0 \\vec{J} $$\nIm quellenfreien Raum sind die rechten Seiten Null (homogene Wellengleichungen).",
+            "source": "Zettel 11, Aufgabe 1",
+            "scriptRef": "Kapitel 6.2.1, Gl. (6.45)/(6.47) [bzw. 5.51/5.52]",
+            "sheetId": 11
+            },
+            {
+            "id": 60,
+            "question": "Warum sind Fourier-Transformationen so wichtig im Zusammenhang mit elektromagnetische Wellen?",
+            "answer": "Sie vereinfachen die Lösung der Wellengleichungen enorm, da sie Differentialoperatoren in algebraische Multiplikationen verwandeln ($\\partial_t \\to -i\\omega$, $\\nabla \\to i\\vec{k}$). Man kann Wellenprobleme für jede Frequenzkomponente (monochromatische Welle) einzeln lösen.",
+            "source": "Zettel 11, Aufgabe 2",
+            "scriptRef": "Kapitel 6.1.2",
+            "sheetId": 11
+            },
+            {
+            "id": 61,
+            "question": "Müssten wir uns auch mit Fourier-Transformationen beschäftigen, wenn die Theorie der Elektrodynamik nicht-linear wäre?",
+            "answer": "Eher nicht in dieser Form. Die Nützlichkeit der Fourier-Trafo basiert auf dem **Superpositionsprinzip** (Linearität): Man kann die Lösungen für einzelne Frequenzen addieren, um die Gesamtlösung zu erhalten. In einer nicht-linearen Theorie gilt Superposition nicht, und Frequenzen würden miteinander koppeln/mischen.",
+            "source": "Zettel 11, Aufgabe 3",
+            "scriptRef": "Kapitel 6.1.1 (Implizit)",
+            "sheetId": 11
+            },
+            {
+            "id": 62,
+            "question": "Was sind die Energie und der Impuls einer elektromagnetischen Welle?",
+            "answer": "Für eine ebene Welle im Vakuum gelten:\n- **Energiedichte**: $u = \\epsilon_0 E^2$ (elektrischer und magnetischer Anteil sind gleich groß).\n- **Impulsdichte**: $\\vec{p} = \\frac{\\vec{S}}{c^2} = \\frac{u}{c} \\hat{k}$ (Impuls = Energie / Lichtgeschwindigkeit).",
+            "source": "Zettel 11, Aufgabe 4",
+            "scriptRef": "Kapitel 6.1.4, Gl. (6.30)/(6.32)",
+            "sheetId": 11
+            },
+            {
+            "id": 63,
+            "question": "Was versteht man unter retardierten Potentialen? Wann sind diese wichtig?",
+            "answer": "Es sind Potentiale $\\Phi(\\vec{r}, t)$, die nicht vom Zustand der Quellen zum aktuellen Zeitpunkt $t$, sondern zum früheren Zeitpunkt $t_r = t - |\\vec{r}-\\vec{r}'|/c$ abhängen. Dies berücksichtigt, dass sich elektromagnetische Wirkungen nur mit Lichtgeschwindigkeit $c$ ausbreiten. Sie sind wichtig bei zeitabhängigen Quellen, insbesondere bei Strahlungsproblemen.",
+            "source": "Zettel 11, Aufgabe 5",
+            "scriptRef": "Kapitel 6.2.2, Gl. (6.51)",
+            "sheetId": 11
+            },
+            // --- Zettel 12 ---
+            {
+            "id": 64,
+            "question": "Was ist elektrische Dipolstrahlung?",
+            "answer": "Strahlung, die von einem oszillierenden elektrischen Dipol (beschleunigte Ladungen) ausgesandt wird. Charakteristisch ist, dass die Feldstärke im Fernfeld nur mit $1/r$ abfällt (Strahlungsfeld), wodurch Energie ins Unendliche transportiert wird. Die Abstrahlcharakteristik hat die Form einer 'Donut'-Keule ($\\sin^2 \\theta$).",
+            "source": "Zettel 12, Aufgabe 1",
+            "scriptRef": "Kapitel 6.2 / 6.2.2 (vgl. Gl. 6.72)",
+            "sheetId": 12
+            },
+            {
+            "id": 65,
+            "question": "Wie unterscheidet man Nah- und Fernfeld der elektromagnetischen Strahlung?",
+            "answer": "**Nahfeld**: Dominiert bei kleinen Abständen. Die Felder fallen schnell ab (z.B. $1/r^2$ Coulomb-Term, $1/r^3$ Dipol-Term). Energie wird im Wesentlichen nur gespeichert/ausgetauscht.\n**Fernfeld**: Dominiert bei großen Abständen. Felder fallen langsam ab ($1/r$). Hier findet der eigentliche Energietransport (Strahlung) statt.",
+            "source": "Zettel 12, Aufgabe 2",
+            "scriptRef": "Kapitel 6.2 (vgl. Text nach Gl. 6.74)",
+            "sheetId": 12
+            },
+            {
+            "id": 66,
+            "question": "Betrachten Sie eine gleichförmig bewegte Punktladung: Wohin zeigen das E- und das B-Feld? Wie ist der Poynting-Vektor gerichtet? Strahlt die Ladung Energie ab?",
+            "answer": "- Das $\\vec{E}$-Feld zeigt radial vom aktuellen Ort der Ladung weg (ist aber gestaucht).\n- Das $\\vec{B}$-Feld bildet Ringe um die Bewegungsachse.\n- Der Poynting-Vektor $\\vec{S}$ zeigt in Bewegungsrichtung (Energie wird mitgeführt).\n- **Keine Strahlung**: Da keine Beschleunigung vorliegt, wird keine Energie ins Unendliche abgestrahlt.",
+            "source": "Zettel 12, Aufgabe 3",
+            "scriptRef": "Kapitel 6.2 (vgl. Gl. 6.75)",
+            "sheetId": 12
+            },
+            {
+            "id": 67,
+            "question": "Was ist das Relativitätsprinzip?",
+            "answer": "Es besagt, dass die physikalischen Naturgesetze in allen Inertialsystemen (gleichförmig gegeneinander bewegten Bezugssystemen) die gleiche Form haben. Es gibt kein ausgezeichnetes 'absolutes' Ruhesystem.",
+            "source": "Zettel 12, Aufgabe 4",
+            "scriptRef": "Kapitel 1.1 / (Kap. 7 im Ausblick)",
+            "sheetId": 12
+            },
+            {
+            "id": 68,
+            "question": "Was sind die Einsteinschen Postulate, auf denen die spezielle Relativitätstheorie beruht?",
+            "answer": "1.  **Relativitätsprinzip**: Die Gesetze der Physik sind in allen Inertialsystemen gleich.\n2.  **Konstanz der Lichtgeschwindigkeit**: Die Lichtgeschwindigkeit im Vakuum $c$ ist in allen Inertialsystemen gleich groß, unabhängig von der Bewegung der Quelle oder des Beobachters.",
+            "source": "Zettel 12, Aufgabe 5",
+            "scriptRef": "Kapitel 1.1 / (Kap. 7)",
+            "sheetId": 12
+            }
+        ];
+
+        // --- MathJax Helper Component ---
+        const MathRenderer = ({ text }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (window.MathJax && containerRef.current) {
+                window.MathJax.typesetPromise && window.MathJax.typesetPromise([containerRef.current]);
+                }
+            }, [text]);
+
+            const parseMarkdown = (line) => {
+                const parts = line.split(/\*\*(.*?)\*\*/g);
+                return parts.map((part, i) => {
+                if (i % 2 === 1) {
+                    return <strong key={i} className="font-bold text-emerald-300 drop-shadow-sm">{part}</strong>;
+                }
+                return part;
+                });
+            };
+
+            const formattedText = text.split('\n').map((str, index) => (
+                <span key={index}>
+                {parseMarkdown(str)}
+                <br />
+                </span>
+            ));
+
+            return (
+                <div ref={containerRef} className="leading-relaxed">
+                {formattedText}
+                </div>
+            );
+        };
+
+        // --- Main Application Component ---
+        function App() {
+            const [appState, setAppState] = useState('menu');
+            const [selectedSheetIds, setSelectedSheetIds] = useState([]);
+            const [activeCards, setActiveCards] = useState([]); 
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+            const [direction, setDirection] = useState(0); 
+
+            // Fisher-Yates Shuffle Algorithm
+            const shuffleArray = (array) => {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            };
+
+            const toggleSheetSelection = (id) => {
+                setSelectedSheetIds(prev => 
+                prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+                );
+            };
+
+            const selectAll = () => setSelectedSheetIds(sheetMetadata.map(s => s.id));
+            const deselectAll = () => setSelectedSheetIds([]);
+
+            const startLearning = () => {
+                if (selectedSheetIds.length > 0) {
+                // 1. Filter cards
+                const selectedCards = flashcardsData.filter(card => selectedSheetIds.includes(card.sheetId));
+                // 2. Shuffle cards
+                const shuffledCards = shuffleArray(selectedCards);
+                
+                // 3. Set state
+                setActiveCards(shuffledCards);
+                setAppState('learning');
+                setCurrentIndex(0);
+                setIsFlipped(false);
+                }
+            };
+
+            const handleNext = () => {
+                if (activeCards.length <= 1) return;
+                setIsFlipped(false);
+                setDirection(1);
+                setTimeout(() => {
+                    setCurrentIndex((prev) => (prev + 1) % activeCards.length);
+                    setDirection(0);
+                }, 200);
+            };
+
+            const handlePrev = () => {
+                if (activeCards.length <= 1) return;
+                setIsFlipped(false);
+                setDirection(-1);
+                setTimeout(() => {
+                    setCurrentIndex((prev) => (prev - 1 + activeCards.length) % activeCards.length);
+                    setDirection(0);
+                }, 200);
+            };
+
+            // --- Render Menu View ---
+            if (appState === 'menu') {
+                return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-950 text-slate-100 font-sans flex flex-col">
+                    <header className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white p-6 shadow-lg z-10 border-b border-white/10 shrink-0">
+                    <div className="max-w-4xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                        <GraduationCap size={32} />
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Theo 2: Elektrodynamik</h1>
+                            <p className="text-blue-200 text-sm">Tutorium & Übungsleiter: Theo 2</p>
+                        </div>
+                        </div>
+                    </div>
+                    </header>
+
+                    <main className="flex-grow flex flex-col items-center justify-center p-8 text-center relative z-0">
+                        <div className="max-w-lg w-full flex flex-col items-center">
+                            {/* Image - moved out of the main card or styled to look separate */}
+                            <div className="mb-4 relative z-10">
+                                <img 
+                                    src="https://jennifer-schober.com/wp-content/uploads/2019/01/pic_cv.jpg" 
+                                    alt="Prof. Jennifer Schober" 
+                                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg transform rotate-180"
+                                    onError={(e) => {
+                                    e.currentTarget.src = "https://placehold.co/150x150?text=Prof";
+                                    e.currentTarget.alt = "Placeholder";
+                                    }}
+                                />
+                            </div>
+
+                            {/* Speech Bubble Container */}
+                            <div className="bg-white rounded-3xl shadow-2xl w-full relative p-8">
+                                {/* Tail pointing up */}
+                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[16px] border-b-white"></div>
+                                
+                                <h2 className="text-2xl font-bold text-slate-800 mb-3">Willkommen zum Theo 2 Trainer!</h2>
+                                <div className="text-slate-600 mb-6 space-y-2">
+                                    <p>
+                                        Bereite dich interaktiv auf die Prüfung in Theoretischer Elektrodynamik vor.
+                                        Basierend auf dem Skript von Prof. Schober.
+                                    </p>
+                                    <p className="font-medium text-blue-700 bg-blue-50 inline-block px-3 py-1 rounded-lg text-sm">
+                                        💡 Tipp: In der Lösung findest du immer die genaue Referenz ins Skript!
+                                    </p>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => setAppState('selection')}
+                                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
+                                >
+                                    <BookOpen size={24} />
+                                    <span>Übungsblätter auswählen</span>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                    
+                    <footer className="bg-black/20 backdrop-blur-sm py-4 text-center text-slate-400 text-sm border-t border-slate-700 shrink-0">
+                        <p>&copy; 2026 Theo 2 - Theoretische Physik II. Basierend auf dem Skript von J. Schober.</p>
+                    </footer>
+                </div>
+                );
+            }
+
+            // --- Render Selection View ---
+            if (appState === 'selection') {
+                return (
+                <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900 font-sans flex flex-col overflow-hidden">
+                    <header className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white p-6 shadow-lg z-10 shrink-0">
+                    <div className="max-w-4xl mx-auto flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                        <button 
+                            onClick={() => setAppState('menu')}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors mr-2"
+                            title="Zurück zum Menü"
+                        >
+                            <Home size={24} />
+                        </button>
+                        <GraduationCap size={32} />
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Theo 2: Elektrodynamik</h1>
+                            <p className="text-blue-200 text-sm">Tutorium & Übungsleiter: Theo 2</p>
+                        </div>
+                        </div>
+                    </div>
+                    </header>
+
+                    <main className="flex-grow flex flex-col overflow-hidden relative">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+                        <div className="max-w-5xl mx-auto w-full pb-20">
+                        <div className="mb-8 text-center">
+                            <h2 className="text-3xl font-bold text-slate-800 mb-2">Wähle deine Themen</h2>
+                            <p className="text-slate-600">Welche Übungsblätter möchtest du heute wiederholen?</p>
+                        </div>
+
+                        <div className="flex justify-center gap-4 mb-6">
+                            <button onClick={selectAll} className="px-4 py-2 bg-white border border-slate-300 rounded hover:bg-slate-50 text-sm font-medium text-slate-700 transition shadow-sm">
+                            Alle auswählen
+                            </button>
+                            <button onClick={deselectAll} className="px-4 py-2 bg-white border border-slate-300 rounded hover:bg-slate-50 text-sm font-medium text-slate-700 transition shadow-sm">
+                            Auswahl aufheben
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            {sheetMetadata.map((sheet) => {
+                            const isSelected = selectedSheetIds.includes(sheet.id);
+                            return (
+                                <div 
+                                key={sheet.id}
+                                onClick={() => toggleSheetSelection(sheet.id)}
+                                className={`
+                                    cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 flex items-start space-x-3
+                                    ${isSelected 
+                                    ? 'border-blue-500 bg-blue-50 shadow-md transform scale-[1.02]' 
+                                    : 'border-white/50 bg-white/80 hover:border-blue-300 hover:shadow-lg backdrop-blur-sm'}
+                                `}
+                                >
+                                <div className={`mt-1 text-blue-600`}>
+                                    {isSelected ? <CheckSquare size={20} /> : <Square size={20} className="text-slate-300" />}
+                                </div>
+                                <div>
+                                    <h3 className={`font-bold ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>
+                                    {sheet.title}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 leading-snug mt-1">
+                                    {sheet.topic}
+                                    </p>
+                                </div>
+                                </div>
+                            );
+                            })}
+                        </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-white/80 backdrop-blur-md border-t border-white/20 shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                        <div className="text-center max-w-5xl mx-auto">
+                        <button 
+                            onClick={startLearning}
+                            disabled={selectedSheetIds.length === 0}
+                            className={`
+                            w-full md:w-auto px-10 py-4 rounded-full text-lg font-bold shadow-lg transition-all transform flex items-center justify-center mx-auto space-x-3
+                            ${selectedSheetIds.length > 0 
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:scale-105 hover:shadow-blue-500/30' 
+                                : 'bg-slate-300 text-slate-500 cursor-not-allowed'}
+                            `}
+                        >
+                            <Shuffle size={20} />
+                            <span>Lernen starten ({selectedSheetIds.length} Blätter)</span>
+                        </button>
+                        <p className="text-xs text-slate-500 mt-2">Die Karten werden in zufälliger Reihenfolge abgefragt.</p>
+                        </div>
+                    </div>
+                    </main>
+                </div>
+                );
+            }
+
+            // --- Render Learning View ---
+            const currentCard = activeCards[currentIndex];
+
+            return (
+                <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900 font-sans flex flex-col overflow-hidden">
+                {/* Header */}
+                <header className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-900 text-white p-4 shadow-lg z-10 shrink-0">
+                    <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <button 
+                        onClick={() => setAppState('selection')}
+                        className="p-2 hover:bg-white/10 rounded-full transition-colors mr-2"
+                        title="Zurück zur Auswahl"
+                        >
+                        <ArrowLeft size={24} />
+                        </button>
+                        <GraduationCap size={28} />
+                        <div>
+                        <h1 className="text-xl font-bold tracking-tight hidden sm:block">Theo 2: Elektrodynamik</h1>
+                        <h1 className="text-xl font-bold tracking-tight sm:hidden">Theo 2</h1>
+                        </div>
+                    </div>
+                    <div className="text-right text-xs md:text-sm">
+                        <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                        {activeCards.length} Karte{activeCards.length !== 1 && 'n'} aktiv
+                        </span>
+                    </div>
+                    </div>
+                </header>
+
+                {/* Main Content */}
+                <main className="flex-grow flex flex-col items-center p-4 min-h-0">
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full max-w-2xl mb-2 shrink-0">
+                    <div className="flex justify-between text-sm text-slate-500 mb-1 font-medium">
+                        <span>Karte {currentIndex + 1} von {activeCards.length}</span>
+                        <span>{Math.round(((currentIndex + 1) / activeCards.length) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden shadow-inner">
+                        <div 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full transition-all duration-300 ease-out shadow-sm"
+                        style={{ width: `${((currentIndex + 1) / activeCards.length) * 100}%` }}
+                        />
+                    </div>
+                    </div>
+
+                    {/* Flashcard Container */}
+                    <div className="relative w-full max-w-2xl flex-1 min-h-0 perspective-1000 group my-2 md:my-4">
+                    
+                    {/* Slider Wrapper */}
+                    <div 
+                        className={`w-full h-full transition-all duration-200 ease-in-out
+                        ${direction === 1 ? 'translate-x-12 opacity-0' : direction === -1 ? '-translate-x-12 opacity-0' : 'translate-x-0 opacity-100'}
+                        `}
+                    >
+                        {/* Flipper Wrapper */}
+                        <div 
+                        className="relative w-full h-full duration-500 preserve-3d cursor-pointer shadow-2xl rounded-2xl"
+                        style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                        onClick={() => setIsFlipped(!isFlipped)}
+                        >
+                        
+                        {/* Front (Question) */}
+                        <div 
+                            className="absolute w-full h-full backface-hidden bg-white rounded-2xl border-l-8 border-blue-600 p-4 md:p-8 flex flex-col justify-between shadow-sm"
+                            style={{ 
+                            zIndex: isFlipped ? 0 : 20 
+                            }}
+                        >
+                            <div className="flex-grow overflow-y-auto custom-scrollbar">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-2 text-blue-600 font-bold uppercase tracking-wider text-xs bg-blue-50 px-2 py-1 rounded">
+                                <BookOpen size={16} />
+                                <span>Frage</span>
+                                </div>
+                                <span className="text-xs font-mono text-slate-400">#{currentCard.id}</span>
+                            </div>
+                            <div className="text-lg md:text-2xl font-medium text-slate-800 leading-snug">
+                                <MathRenderer key={`q-${currentCard.id}`} text={currentCard.question} />
+                            </div>
+                            </div>
+                            <div className="text-center text-slate-400 text-sm mt-4 flex items-center justify-center space-x-2 pt-2 border-t border-slate-100 shrink-0">
+                            <RotateCw size={16} className="text-blue-400" />
+                            <span>Klicken zum Umdrehen</span>
+                            </div>
+                        </div>
+
+                        {/* Back (Answer) */}
+                        <div 
+                            className="absolute w-full h-full backface-hidden bg-slate-800 rounded-2xl border-l-8 border-emerald-500 p-4 md:p-8 flex flex-col justify-between shadow-sm"
+                            style={{ 
+                            transform: 'rotateY(180deg)',
+                            zIndex: isFlipped ? 20 : 0 
+                            }}
+                        >
+                            <div className="flex flex-col h-full text-slate-100">
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-700/50 flex-shrink-0">
+                                <div className="flex items-center space-x-2 text-emerald-400 font-bold uppercase tracking-wider text-xs bg-slate-700/50 px-2 py-1 rounded">
+                                <CheckCircle size={16} />
+                                <span>Lösung</span>
+                                </div>
+                                <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded border border-slate-600 truncate max-w-[120px]">
+                                {currentCard.source}
+                                </span>
+                            </div>
+                            
+                            <div className="text-base md:text-lg pb-4 leading-relaxed flex-grow overflow-y-auto custom-scrollbar">
+                                <MathRenderer key={`a-${currentCard.id}`} text={currentCard.answer} />
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-700 text-xs text-slate-400 font-mono mt-auto flex-shrink-0">
+                                Referenz: {currentCard.scriptRef}
+                            </div>
+                            </div>
+                        </div>
+
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center space-x-4 md:space-x-8 shrink-0 mb-2 md:mb-4">
+                    <button 
+                        onClick={handlePrev}
+                        disabled={activeCards.length <= 1}
+                        className="p-3 md:p-4 rounded-full bg-white text-blue-900 shadow-lg hover:bg-blue-50 hover:scale-105 transition-all border border-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        aria-label="Vorherige Karte"
+                    >
+                        <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    </button>
+
+                    <button 
+                        onClick={() => setIsFlipped(!isFlipped)}
+                        className="px-4 md:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 font-semibold transition-all hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 min-w-[140px] md:min-w-[160px] text-sm md:text-base"
+                    >
+                        {isFlipped ? 'Frage anzeigen' : 'Lösung anzeigen'}
+                    </button>
+
+                    <button 
+                        onClick={handleNext}
+                        disabled={activeCards.length <= 1}
+                        className="p-3 md:p-4 rounded-full bg-white text-blue-900 shadow-lg hover:bg-blue-50 hover:scale-105 transition-all border border-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        aria-label="Nächste Karte"
+                    >
+                        <ChevronRight size={24} className="md:w-8 md:h-8" />
+                    </button>
+                    </div>
+
+                </main>
+
+                {/* Footer */}
+                <footer className="bg-white/50 backdrop-blur-sm py-2 text-center text-slate-500 text-xs md:text-sm border-t border-slate-200 shrink-0">
+                    <p>&copy; 2026 Theo 2 - Theoretische Physik II. Basierend auf dem Skript von J. Schober.</p>
+                </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
