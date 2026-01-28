@@ -107,7 +107,9 @@
             { id: 9, title: "Blatt 9", topic: "Erhaltungssätze & Poynting-Vektor" },
             { id: 10, title: "Blatt 10", topic: "Wellengleichung & Polarisation" },
             { id: 11, title: "Blatt 11", topic: "Inhomogene Wellengleichung & Fourier" },
-            { id: 12, title: "Blatt 12", topic: "Strahlung & Spezielle Relativitätstheorie" },
+            { id: 12, title: "Blatt 12", topic: "Strahlung & Prinzipien der SRT" },
+            { id: 13, title: "Blatt 13", topic: "Relativistische Kinematik & Dynamik" },
+            { id: 14, title: "Blatt 14", topic: "Minkowski-Raum & Kovariante Elektrodynamik" }
         ];
 
         // --- Data: Quickies Zettel 1 - 12 ---
@@ -629,45 +631,133 @@
             },
             // --- Zettel 12 ---
             {
-            "id": 64,
-            "question": "Was ist elektrische Dipolstrahlung?",
-            "answer": "Strahlung, die von einem oszillierenden elektrischen Dipol (beschleunigte Ladungen) ausgesandt wird. Charakteristisch ist, dass die Feldstärke im Fernfeld nur mit $1/r$ abfällt (Strahlungsfeld), wodurch Energie ins Unendliche transportiert wird. Die Abstrahlcharakteristik hat die Form einer 'Donut'-Keule ($\\sin^2 \\theta$).",
-            "source": "Zettel 12, Aufgabe 1",
-            "scriptRef": "Kapitel 6.2 / 6.2.2 (vgl. Gl. 6.72)",
-            "sheetId": 12
-            },
-            {
-            "id": 65,
-            "question": "Wie unterscheidet man Nah- und Fernfeld der elektromagnetischen Strahlung?",
-            "answer": "**Nahfeld**: Dominiert bei kleinen Abständen. Die Felder fallen schnell ab (z.B. $1/r^2$ Coulomb-Term, $1/r^3$ Dipol-Term). Energie wird im Wesentlichen nur gespeichert/ausgetauscht.\n**Fernfeld**: Dominiert bei großen Abständen. Felder fallen langsam ab ($1/r$). Hier findet der eigentliche Energietransport (Strahlung) statt.",
-            "source": "Zettel 12, Aufgabe 2",
-            "scriptRef": "Kapitel 6.2 (vgl. Text nach Gl. 6.74)",
-            "sheetId": 12
-            },
-            {
-            "id": 66,
-            "question": "Betrachten Sie eine gleichförmig bewegte Punktladung: Wohin zeigen das E- und das B-Feld? Wie ist der Poynting-Vektor gerichtet? Strahlt die Ladung Energie ab?",
-            "answer": "- Das $\\vec{E}$-Feld zeigt radial vom aktuellen Ort der Ladung weg (ist aber gestaucht).\n- Das $\\vec{B}$-Feld bildet Ringe um die Bewegungsachse.\n- Der Poynting-Vektor $\\vec{S}$ zeigt in Bewegungsrichtung (Energie wird mitgeführt).\n- **Keine Strahlung**: Da keine Beschleunigung vorliegt, wird keine Energie ins Unendliche abgestrahlt.",
-            "source": "Zettel 12, Aufgabe 3",
-            "scriptRef": "Kapitel 6.2 (vgl. Gl. 6.75)",
-            "sheetId": 12
-            },
-            {
-            "id": 67,
-            "question": "Was ist das Relativitätsprinzip?",
-            "answer": "Es besagt, dass die physikalischen Naturgesetze in allen Inertialsystemen (gleichförmig gegeneinander bewegten Bezugssystemen) die gleiche Form haben. Es gibt kein ausgezeichnetes 'absolutes' Ruhesystem.",
-            "source": "Zettel 12, Aufgabe 4",
-            "scriptRef": "Kapitel 1.1 / (Kap. 7 im Ausblick)",
-            "sheetId": 12
-            },
-            {
-            "id": 68,
-            "question": "Was sind die Einsteinschen Postulate, auf denen die spezielle Relativitätstheorie beruht?",
-            "answer": "1.  **Relativitätsprinzip**: Die Gesetze der Physik sind in allen Inertialsystemen gleich.\n2.  **Konstanz der Lichtgeschwindigkeit**: Die Lichtgeschwindigkeit im Vakuum $c$ ist in allen Inertialsystemen gleich groß, unabhängig von der Bewegung der Quelle oder des Beobachters.",
-            "source": "Zettel 12, Aufgabe 5",
-            "scriptRef": "Kapitel 1.1 / (Kap. 7)",
-            "sheetId": 12
-            }
+              "id": 64,
+              "question": "Was ist elektrische Dipolstrahlung?",
+              "answer": "Elektrische Dipolstrahlung ist die elektromagnetische Strahlung, die von einem oszillierenden elektrischen Dipol (zeitabhängiges Dipolmoment $\\vec{p}(t)$) ausgesandt wird. Sie stellt in der Multipolentwicklung meist den dominanten Anteil der Strahlung dar. Die Felder fallen im Fernfeld nur mit $1/r$ ab, wodurch Energie ins Unendliche transportiert wird.",
+              "source": "Zettel 12, Aufgabe 1",
+              "scriptRef": "Kapitel 6.2.3",
+              "sheetId": 12
+             },
+             {
+              "id": 65,
+              "question": "Wie unterscheidet man Nah- und Fernfeld der elektromagnetischen Strahlung?",
+              "answer": "Die Unterscheidung erfolgt anhand der Abhängigkeit der Feldstärke vom Abstand $r$:\n\n* **Nahfeld:** Dominiert bei kleinen Abständen. Die Felder verhalten sich wie statische Dipolfelder ($\\,\\propto 1/r^2$ oder $1/r^3$). Die Energie 'schwappt' hin und her, fließt aber nicht ab.\n* **Fernfeld (Strahlungszone):** Dominiert bei großen Abständen ($r \\gg \\lambda$). Die Felder sind proportional zu $1/r$ (siehe Gl. (6.61) ff.). Nur diese Anteile tragen zur abgestrahlten Leistung bei.",
+              "source": "Zettel 12, Aufgabe 2",
+              "scriptRef": "Kapitel 6.2.3",
+              "sheetId": 12
+             },
+             {
+              "id": 66,
+              "question": "Betrachten Sie eine gleichförmig bewegte Punktladung: Wohin zeigen das E- und B-Feld? Strahlt die Ladung Energie ab?",
+              "answer": "Das **E-Feld** zeigt auf die *aktuelle* Position der Ladung (trotz Retardierung \"extrapoliert\" das Feld die Bewegung). Das **B-Feld** steht senkrecht auf $\\vec{v}$ und $\\vec{E}$ (Biot-Savart-ähnlich).\nDie Ladung strahlt **keine** Energie ab, da die Beschleunigung $\\vec{a}=0$ ist (Larmor-Formel $P \\propto a^2$). Der Poynting-Vektor transportiert die Feldenergie lediglich mit der Ladung mit.",
+              "source": "Zettel 12, Aufgabe 3",
+              "scriptRef": "Kapitel 6.2 (Liénard-Wiechert Potentiale Kontext)",
+              "sheetId": 12
+             },
+             {
+              "id": 67,
+              "question": "Was ist das Relativitätsprinzip?",
+              "answer": "Das Relativitätsprinzip besagt, dass die physikalischen Gesetze in allen Inertialsystemen identisch (forminvariant) sind. Es gibt kein ausgezeichnetes Bezugssystem (keinen absoluten Äther).",
+              "source": "Zettel 12, Aufgabe 4",
+              "scriptRef": "Kapitel 7.1.1",
+              "sheetId": 12
+             },
+             {
+              "id": 68,
+              "question": "Was sind die Einsteinschen Postulate?",
+              "answer": "Die Spezielle Relativitätstheorie beruht auf zwei Postulaten:\n1.  **Relativitätsprinzip:** Die Naturgesetze sind in allen Inertialsystemen gleich.\n2.  **Konstanz der Lichtgeschwindigkeit:** Die Lichtgeschwindigkeit $c$ im Vakuum ist in jedem Inertialsystem konstant und unabhängig von der Bewegung der Quelle oder des Beobachters.",
+              "source": "Zettel 12, Aufgabe 5",
+              "scriptRef": "Kapitel 7.1.1",
+              "sheetId": 12
+             },
+             {
+              "id": 69,
+              "question": "Erläutern Sie Längenkontraktion und Zeitdilatation.",
+              "answer": "* **Zeitdilatation:** Bewegte Uhren gehen langsamer. Ein Zeitintervall $\\Delta t$ im bewegten System erscheint im Ruhesystem verlängert: $\\Delta t' = \\gamma \\Delta t$ (mit $\\gamma \\ge 1$).\n* **Längenkontraktion:** Bewegte Objekte erscheinen in Bewegungsrichtung verkürzt. Eine Länge $L$ im Ruhesystem des Objekts erscheint im bewegten System als $L' = L / \\gamma$.\nBeide Effekte werden durch den Lorentzfaktor $\\gamma = 1/\\sqrt{1-v^2/c^2}$ quantifiziert.",
+              "source": "Zettel 13, Aufgabe 1",
+              "scriptRef": "Kapitel 7.1.3",
+              "sheetId": 13
+             },
+             {
+              "id": 70,
+              "question": "Zwillingsparadoxon: Warum ist der gereiste Zwilling jünger?",
+              "answer": "Das Paradoxon löst sich durch die Asymmetrie der Bezugssysteme auf. Der reisende Zwilling muss beschleunigen (umkehren), um zurückzukehren, und wechselt dabei das Inertialsystem. Er bleibt also nicht in *einem* Inertialsystem, während der Erd-Zwilling dies (näherungsweise) tut. Daher sind die Situationen nicht vertauschbar, und die Zeitdilatation wirkt effektiv auf den Reisenden.",
+              "source": "Zettel 13, Aufgabe 2",
+              "scriptRef": "Kapitel 7.1.3 (Kontext)",
+              "sheetId": 13
+             },
+             {
+              "id": 71,
+              "question": "Scheunenparadoxon: Wie erklärt sich der Widerspruch?",
+              "answer": "Der Widerspruch löst sich durch die **Relativität der Gleichzeitigkeit**. Ereignisse, die in einem System gleichzeitig sind (z.B. das Schließen beider Tore), finden im anderen System zu unterschiedlichen Zeiten statt. Im System der Scheune passen beide Enden kurzzeitig gleichzeitig hinein. Im System des Balkens schließen die Tore nacheinander, sodass der (zu lange) Balken nie vollständig eingeschlossen ist.",
+              "source": "Zettel 13, Aufgabe 3",
+              "scriptRef": "Kapitel 7.1.3 / 7.1.4",
+              "sheetId": 13
+             },
+             {
+              "id": 72,
+              "question": "Was ist die Vierergeschwindigkeit?",
+              "answer": "Die Vierergeschwindigkeit $U^\\mu$ ist die Ableitung der Vierer-Ortskoordinate $x^\\mu$ nach der Eigenzeit $\\tau$:\n$$ U^\\mu = \\frac{dx^\\mu}{d\\tau} = \\gamma (c, \\vec{u}) $$\nSie ist der Tangentialvektor an die Weltlinie eines Teilchens.",
+              "source": "Zettel 13, Aufgabe 4",
+              "scriptRef": "Kapitel 7.2.1",
+              "sheetId": 13
+             },
+             {
+              "id": 73,
+              "question": "Was sind relativistischer Impuls und Energie?",
+              "answer": "Sie sind Komponenten des Viererimpulses $p^\\mu = m U^\\mu = (E/c, \\vec{p})$.\n\n* **Relativistische Energie:** $E = \\gamma m c^2$\n* **Relativistischer Impuls:** $\\vec{p} = \\gamma m \\vec{u}$\n(Hierbei ist $m$ die Ruhemasse).",
+              "source": "Zettel 13, Aufgabe 5",
+              "scriptRef": "Kapitel 7.2.2 (vgl. Gl. in 7.2)",
+              "sheetId": 13
+             },
+             {
+              "id": 74,
+              "question": "Illustrieren Sie Zeitdilatation und Längenkontraktion mit Minkowski-Diagrammen.",
+              "answer": "In einem Minkowski-Diagramm ($ct$ gegen $x$) entspricht:\n* **Zeitdilatation:** Der Einheitspunkt auf der Zeitachse des bewegten Systems ($ct'$) liegt auf einer Hyperbel oberhalb der $ct$-Achse, was einer längeren Zeit im ruhenden System entspricht.\n* **Längenkontraktion:** Die Gleichzeitigkeit im bewegten System ist eine geneigte Gerade ($x'$). Die Projektion der Einheitslänge auf die $x$-Achse des Ruhesystems ist kürzer.",
+              "source": "Zettel 14, Aufgabe 1",
+              "scriptRef": "Kapitel 7.1.4 (Abb. 7.6, 7.7)",
+              "sheetId": 14
+             },
+             {
+              "id": 75,
+              "question": "Was ist das Minkowski-Intervall?",
+              "answer": "Das Minkowski-Intervall $ds^2$ ist der invariante Abstand zwischen zwei Ereignissen in der Raumzeit:\n$$ ds^2 = c^2 dt^2 - d\\vec{x}^2 = \\eta_{\\mu\\nu} dx^\\mu dx^\\nu $$\nEs hat in allen Inertialsystemen denselben Wert (Lorentz-Invariante).",
+              "source": "Zettel 14, Aufgabe 2",
+              "scriptRef": "Kapitel 7.1.4, Gl. (7.50)",
+              "sheetId": 14
+             },
+             {
+              "id": 76,
+              "question": "Was sind Eigenzeit und Eigengeschwindigkeit?",
+              "answer": "* **Eigenzeit ($\\tau$):** Die Zeit, die von einer Uhr gemessen wird, die im Ruhesystem des Teilchens mitgeführt wird ($d\\tau = dt/\\gamma$).\n* **Eigengeschwindigkeit:** Oft synonym zur Vierergeschwindigkeit verwendet, oder als $\\eta = \\text{artanh}(v/c)$ (Rapidität). Im Skript Kontext meist Vierergeschwindigkeit $U^\\mu$ (Geschwindigkeit bezüglich der Eigenzeit).",
+              "source": "Zettel 14, Aufgabe 3",
+              "scriptRef": "Kapitel 7.2.1",
+              "sheetId": 14
+             },
+             {
+              "id": 77,
+              "question": "Ist das Produkt der Vierergeschwindigkeit $U^\\mu$ mit sich selbst zeitartig, lichtartig oder raumartig?",
+              "answer": "Das Produkt ist konstant und **zeitartig**:\n$$ U^\\mu U_\\mu = c^2 $$\n(Bei Signatur $(+,-,-,-)$). Da $c^2 > 0$, liegt der Vektor innerhalb des Lichtkegels.",
+              "source": "Zettel 14, Aufgabe 4",
+              "scriptRef": "Kapitel 7.2.1",
+              "sheetId": 14
+             },
+             {
+              "id": 78,
+              "question": "Wie ist der Feldstärketensor der Elektrodynamik definiert?",
+              "answer": "Der elektromagnetische Feldstärketensor $F^{\\mu\\nu}$ ist definiert durch die Viererrotation des Viererpotentials $A^\\mu = (\\Phi/c, \\vec{A})$:\n$$ F^{\\mu\\nu} = \\partial^\\mu A^\\nu - \\partial^\\nu A^\\mu $$\nEr fasst $\\vec{E}$ und $\\vec{B}$ in einer Matrix zusammen.",
+              "source": "Zettel 14, Aufgabe 5",
+              "scriptRef": "Kapitel 7 (Kovariante Formulierung)",
+              "sheetId": 14
+             },
+             {
+              "id": 79,
+              "question": "Wie lauten die Maxwellgleichungen in kovarianter Formulierung?",
+              "answer": "Mit dem Feldstärketensor lauten sie:\n1.  **Inhomogene Gleichungen:** $\\partial_\\mu F^{\\mu\\nu} = \\mu_0 J^\\nu$ (Gauß + Ampère)\n2.  **Homogene Gleichungen (Bianchi-Identität):** $\\partial_\\lambda F_{\\mu\\nu} + \\partial_\\mu F_{\\nu\\lambda} + \\partial_\\nu F_{\\lambda\\mu} = 0$ (Gauß-Magnetismus + Faraday)",
+              "source": "Zettel 14, Aufgabe 6",
+              "scriptRef": "Kapitel 7 (Kovariante Formulierung)",
+              "sheetId": 14
+             }
         ];
 
         // --- MathJax Helper Component ---
